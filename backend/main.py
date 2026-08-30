@@ -145,12 +145,31 @@ async def analyze(payload: dict):
         logger.error(f"score_all_occupations exception: {e}")
         ranked = []
 
-    top = ranked[0] if ranked else None
+        top = ranked[0] if ranked else None
+
+    try:
+        reply_text = generate_spoken_reply(profile, top, language=language)
+    except Exception as e:
+        logger.error(f"generate_spoken_reply exception: {e}")
+        reply_text = (
+            "Here's what I found based on what you told me."
+            if language == "en"
+            else "Aapne jo bataya uske hisaab se, yeh mila."
+        )
+
+    try:
+        audio_b64 = synthesize_speech(reply_text, language=language)
+    except Exception as e:
+        logger.error(f"synthesize_speech exception: {e}")
+        audio_b64 = None
 
     return {
         "profile": profile,
         "matches": ranked[:3],
         "top_occupation": top["occupation_name"] if top else None,
+        "reply_text": reply_text,
+        "reply_audio_base64": audio_b64,
+        "reply_audio_mime": "audio/mpeg" if audio_b64 else None,
     }
 
 
